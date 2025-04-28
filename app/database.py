@@ -1,11 +1,14 @@
 import psycopg2
 import os
+from dotenv import load_dotenv
 
-# Railway environment variables (or hardcode for now)
-DB_PUBLIC_URL = os.getenv('DATABASE_URL', 'postgresql://postgres:msUIAMNVUkfHNSaRKBxRnJaVvIzCZiPi@shortline.proxy.rlwy.net:13727/railway')
+load_dotenv()
+
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 def get_connection():
-    return psycopg2.connect(DB_PUBLIC_URL)
+    return psycopg2.connect(DATABASE_URL)
+
 
 def create_table():
     conn = get_connection()
