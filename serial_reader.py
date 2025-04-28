@@ -1,26 +1,13 @@
 import serial
-import sqlite3
 import time
+from app.database import insert_sensor_data, create_table
 
 # Setup Serial Connection
 ser = serial.Serial('/dev/cu.usbmodem11101', 9600)
 time.sleep(2)  # Allow Arduino reset
 
-# Setup SQLite Database
-conn = sqlite3.connect('sensor_data.db')
-cursor = conn.cursor()
-
-# Create table if not exists
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS sensor_readings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-        soil_moisture INTEGER,
-        temperature REAL,
-        humidity REAL
-    )
-''')
-conn.commit()
+# Setup PostgreSQL Table (optional)
+create_table()
 
 print("Listening for Arduino data...")
 
@@ -36,13 +23,11 @@ while True:
             temp = float(parts[1].split(':')[1].replace('°C', '').strip())
             hum = float(parts[2].split(':')[1].replace('%', '').strip())
 
-            cursor.execute('''
-                INSERT INTO sensor_readings (soil_moisture, temperature, humidity)
-                VALUES (?, ?, ?)
-            ''', (soil, temp, hum))
-            conn.commit()
-
-            print("Saved to database.")
+            # Insert into PostgreSQL database
+            insert_sensor_data(soil, temp, hum)
+            print("Saved to PostgreSQL database.")
 
         except Exception as e:
             print("Error parsing line:", e)
+
+    time.sleep(1)  # Small delay to avoid overwhelming the serial port
