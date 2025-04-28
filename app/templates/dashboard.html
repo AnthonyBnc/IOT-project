@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Smart Humidity-Soil Fan System Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 30px;
+        background-color: #f0f4f7;
+      }
+      h1 {
+        color: #333;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+      li {
+        margin-bottom: 10px;
+        font-size: 1.2em;
+      }
+      .status {
+        font-weight: bold;
+        font-size: 1.4em;
+        color: #0077cc;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Smart Humidity-Soil Fan System Dashboard</h1>
+
+    <ul id="sensorData">
+      <li>
+        <strong>Soil Moisture:</strong> <span id="soil">Loading...</span>%
+      </li>
+      <li><strong>Temperature:</strong> <span id="temp">Loading...</span>°C</li>
+      <li><strong>Humidity:</strong> <span id="hum">Loading...</span>%</li>
+      <li><strong>Timestamp:</strong> <span id="time">Loading...</span></li>
+      <li class="status">
+        <strong>Status:</strong> <span id="status">Loading...</span>
+      </li>
+    </ul>
+
+    <script>
+      async function fetchSensorData() {
+        try {
+          const response = await fetch("/api/sensor");
+          const data = await response.json();
+
+          document.getElementById("soil").textContent = data.soil_moisture;
+          document.getElementById("temp").textContent = parseFloat(
+            data.temperature
+          ).toFixed(2);
+          document.getElementById("hum").textContent = parseFloat(
+            data.humidity
+          ).toFixed(1);
+          document.getElementById("time").textContent = data.timestamp;
+
+          // Determine status based on your Arduino rules
+          let status = "Monitoring...";
+
+          if (data.soil_moisture >= 60) {
+            status = "Soil Moist Enough (No Watering)";
+          } else if (data.soil_moisture >= 40 && data.soil_moisture < 60) {
+            status = "Mildly Dry Soil (Short Watering)";
+          } else if (data.soil_moisture >= 20 && data.soil_moisture < 40) {
+            status = "Dry Soil (Medium Watering)";
+          } else if (data.soil_moisture < 20) {
+            status = "Very Dry Soil! (Long Watering + Alert)";
+          }
+
+          if (data.temperature > 35.0 && data.humidity < 30.0) {
+            status = "Extreme Heat and Dryness! (Extra Watering)";
+          }
+
+          document.getElementById("status").textContent = status;
+        } catch (error) {
+          console.error("Error fetching sensor data:", error);
+        }
+      }
+
+      // Fetch new data every 5 seconds
+      setInterval(fetchSensorData, 5000);
+
+      // Fetch once immediately on page load
+      fetchSensorData();
+    </script>
+  </body>
+</html>
