@@ -19,9 +19,11 @@ while True:
 
         try:
             parts = line.split('|')
-            soil = int(parts[0].split(':')[1].replace('%', '').strip())
-            temp = float(parts[1].split(':')[1].replace('°C', '').strip())
-            hum = float(parts[2].split(':')[1].replace('%', '').strip())
+            temp = float(parts[0].split(':')[1].replace('°C', '').strip())
+            hum = float(parts[1].split(':')[1].replace('%', '').strip())
+            soil = int(parts[2].split(':')[1].replace('%', '').strip())
+
+            print(f"Trying to insert: Soil={soil}%, Temp={temp}°C, Hum={hum}%")
 
             # Insert into PostgreSQL database
             insert_sensor_data(soil, temp, hum)
