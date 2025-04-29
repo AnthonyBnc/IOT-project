@@ -28,6 +28,7 @@
   </head>
   <body>
     <h1>Smart Humidity-Soil Fan System Dashboard</h1>
+    <p>Chung Bao An Nguyen - 103485260</p>
 
     <ul id="sensorData">
       <li>
@@ -59,21 +60,15 @@
           // Determine status based on your Arduino rules
           let status = "Monitoring...";
 
-          if (data.soil_moisture >= 60) {
-            status = "Soil Moist Enough (No Watering)";
-          } else if (data.soil_moisture >= 40 && data.soil_moisture < 60) {
-            status = "Mildly Dry Soil (Short Watering)";
-          } else if (data.soil_moisture >= 20 && data.soil_moisture < 40) {
-            status = "Dry Soil (Medium Watering)";
-          } else if (data.soil_moisture < 20) {
-            status = "Very Dry Soil! (Long Watering + Alert)";
-          }
-
           if (data.temperature > 35.0 && data.humidity < 30.0) {
-            status = "Extreme Heat and Dryness! (Extra Watering)";
+            status = "Extreme Heat and Dryness! (Fan ON)";
+          } else if (data.humidity > 60.0 || data.temperature > 30.0) {
+            status = "High Humidity or Temperature (Fan ON)";
+          } else if (data.soil_moisture <= 5) {
+            status = "Soil Sensor Error or Very Dry (Buzzer Alert)";
+          } else {
+            status = "Normal Conditions (Fan OFF)";
           }
-
-          document.getElementById("status").textContent = status;
         } catch (error) {
           console.error("Error fetching sensor data:", error);
         }

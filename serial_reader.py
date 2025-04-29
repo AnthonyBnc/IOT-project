@@ -3,7 +3,7 @@ import time
 from app.database import insert_sensor_data, create_table
 
 # Setup Serial Connection
-ser = serial.Serial('/dev/cu.usbmodem11101', 9600)
+ser = serial.Serial('/dev/cu.usbmodem31101', 9600)
 time.sleep(2)  # Allow Arduino reset
 
 # Setup PostgreSQL Table (optional)
