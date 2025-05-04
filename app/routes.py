@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify
+from flask import Blueprint, render_template, jsonify, request
 from .database import get_latest_reading
 
 main = Blueprint('main', __name__)
@@ -34,3 +34,23 @@ def sensor_api():
         return jsonify({
             'error': 'No data available'
         }), 404
+
+fan_state = False
+
+@main.route('/api/fan', methods=['POST'])
+def toggle_fan():
+    global fan_state
+    action = request.json.get('action')
+
+    if action == 'on':
+        fan_state = True
+    elif action == 'off':
+        fan_state = False
+
+    return jsonify({'fan_state': fan_state})
+
+@main.route('/api/fan', methods=['GET'])
+def get_fan_state():
+    global fan_state
+    return jsonify({'fan_state': fan_state})
+    

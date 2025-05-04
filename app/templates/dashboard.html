@@ -24,6 +24,21 @@
         font-size: 1.4em;
         color: #0077cc;
       }
+      .control-panel {
+        margin-top: 20px;
+      }
+      .control-btn {
+        padding: 10px 15px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.1em;
+      }
+      .control-btn.off {
+        background-color: #f44336;
+      }
     </style>
   </head>
   <body>
@@ -41,6 +56,10 @@
         <strong>Status:</strong> <span id="status">Loading...</span>
       </li>
     </ul>
+
+    <div class="control-panel">
+      <button id="fanToggle" class="control-btn">Turn Fan ON</button>
+    </div>
 
     <script>
       async function fetchSensorData() {
@@ -69,6 +88,8 @@
           } else {
             status = "Normal Conditions (Fan OFF)";
           }
+
+          document.getElementById("status").textContent = status;
         } catch (error) {
           console.error("Error fetching sensor data:", error);
         }
@@ -79,6 +100,60 @@
 
       // Fetch once immediately on page load
       fetchSensorData();
+
+      // Fan control
+      const fanToggleBtn = document.getElementById("fanToggle");
+      let fanIsOn = false;
+
+      // Check current fan state when page loads
+      async function checkFanState() {
+        try {
+          const response = await fetch("/api/fan");
+          const data = await response.json();
+          fanIsOn = data.fan_state;
+
+          // Update button text and style
+          if (fanIsOn) {
+            fanToggleBtn.textContent = "Turn Fan OFF";
+            fanToggleBtn.classList.add("off");
+          } else {
+            fanToggleBtn.textContent = "Turn Fan ON";
+            fanToggleBtn.classList.remove("off");
+          }
+        } catch (error) {
+          console.error("Error checking fan state:", error);
+        }
+      }
+
+      // Check fan state on page load
+      checkFanState();
+
+      fanToggleBtn.addEventListener("click", async () => {
+        try {
+          const action = fanIsOn ? "off" : "on";
+          const response = await fetch("/api/fan", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action }),
+          });
+
+          const data = await response.json();
+          fanIsOn = data.fan_state;
+
+          // Update button text and style
+          if (fanIsOn) {
+            fanToggleBtn.textContent = "Turn Fan OFF";
+            fanToggleBtn.classList.add("off");
+          } else {
+            fanToggleBtn.textContent = "Turn Fan ON";
+            fanToggleBtn.classList.remove("off");
+          }
+        } catch (error) {
+          console.error("Error toggling fan:", error);
+        }
+      });
     </script>
   </body>
 </html>
