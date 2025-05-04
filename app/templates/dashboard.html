@@ -55,6 +55,9 @@
       <li class="status">
         <strong>Status:</strong> <span id="status">Loading...</span>
       </li>
+      <li class="status">
+        <strong>Fan Status:</strong> <span id="fanStatus">Loading...</span>
+      </li>
     </ul>
 
     <div class="control-panel">
@@ -64,32 +67,39 @@
     <script>
       async function fetchSensorData() {
         try {
-          const response = await fetch("/api/sensor");
-          const data = await response.json();
+          const sensorResponse = await fetch("/api/sensor");
+          const sensorData = await sensorResponse.json();
 
-          document.getElementById("soil").textContent = data.soil_moisture;
+          document.getElementById("soil").textContent =
+            sensorData.soil_moisture;
           document.getElementById("temp").textContent = parseFloat(
-            data.temperature
+            sensorData.temperature
           ).toFixed(2);
           document.getElementById("hum").textContent = parseFloat(
-            data.humidity
+            sensorData.humidity
           ).toFixed(1);
-          document.getElementById("time").textContent = data.timestamp;
+          document.getElementById("time").textContent = sensorData.timestamp;
 
           // Determine status based on your Arduino rules
           let status = "Monitoring...";
 
-          if (data.temperature > 35.0 && data.humidity < 30.0) {
+          if (sensorData.temperature > 35.0 && sensorData.humidity < 30.0) {
             status = "Extreme Heat and Dryness! (Fan ON)";
-          } else if (data.humidity > 60.0 || data.temperature > 30.0) {
+          } else if (
+            sensorData.humidity > 60.0 ||
+            sensorData.temperature > 30.0
+          ) {
             status = "High Humidity or Temperature (Fan ON)";
-          } else if (data.soil_moisture <= 5) {
+          } else if (sensorData.soil_moisture <= 5) {
             status = "Soil Sensor Error or Very Dry (Buzzer Alert)";
           } else {
             status = "Normal Conditions (Fan OFF)";
           }
 
           document.getElementById("status").textContent = status;
+
+          // Also check fan state
+          await checkFanState();
         } catch (error) {
           console.error("Error fetching sensor data:", error);
         }
@@ -104,6 +114,18 @@
       // Fan control
       const fanToggleBtn = document.getElementById("fanToggle");
       let fanIsOn = false;
+
+      // Update fan status display
+      function updateFanStatusDisplay() {
+        const fanStatusElement = document.getElementById("fanStatus");
+        if (fanIsOn) {
+          fanStatusElement.textContent = "ON";
+          fanStatusElement.style.color = "#4CAF50";
+        } else {
+          fanStatusElement.textContent = "OFF";
+          fanStatusElement.style.color = "#f44336";
+        }
+      }
 
       // Check current fan state when page loads
       async function checkFanState() {
@@ -120,6 +142,9 @@
             fanToggleBtn.textContent = "Turn Fan ON";
             fanToggleBtn.classList.remove("off");
           }
+
+          // Update fan status display
+          updateFanStatusDisplay();
         } catch (error) {
           console.error("Error checking fan state:", error);
         }
@@ -150,6 +175,9 @@
             fanToggleBtn.textContent = "Turn Fan ON";
             fanToggleBtn.classList.remove("off");
           }
+
+          // Update fan status display
+          updateFanStatusDisplay();
         } catch (error) {
           console.error("Error toggling fan:", error);
         }
