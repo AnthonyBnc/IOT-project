@@ -2,13 +2,15 @@
 <html>
   <head>
     <title>Smart Humidity-Soil Fan System Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
       body {
         font-family: Arial, sans-serif;
         margin: 30px;
         background-color: #f0f4f7;
       }
-      h1 {
+      h1,
+      h2 {
         color: #333;
       }
       ul {
@@ -26,6 +28,7 @@
       }
       .control-panel {
         margin-top: 20px;
+        margin-bottom: 30px;
       }
       .control-btn {
         padding: 10px 15px;
@@ -39,11 +42,55 @@
       .control-btn.off {
         background-color: #f44336;
       }
+      .charts-container {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+        margin-top: 30px;
+      }
+      .chart-wrapper {
+        background-color: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .time-selector {
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+      .time-btn {
+        padding: 8px 12px;
+        margin-right: 10px;
+        background-color: #e0e0e0;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .time-btn.active {
+        background-color: #0077cc;
+        color: white;
+      }
     </style>
   </head>
   <body>
     <h1>Smart Humidity-Soil Fan System Dashboard</h1>
     <p>Chung Bao An Nguyen - 103485260</p>
+
+    <div style="margin-bottom: 20px">
+      <a
+        href="/visualization"
+        style="
+          display: inline-block;
+          padding: 10px 15px;
+          background-color: #0077cc;
+          color: white;
+          text-decoration: none;
+          border-radius: 5px;
+        "
+      >
+        View Advanced Data Visualization
+      </a>
+    </div>
 
     <ul id="sensorData">
       <li>
@@ -182,6 +229,269 @@
           console.error("Error toggling fan:", error);
         }
       });
+
+      // Charts
+      let tempChart, humidityChart, soilChart;
+      let currentTimeRange = 24; // Default 24 hours
+
+      function initializeCharts() {
+        // Temperature Chart
+        const tempCtx = document.getElementById("tempChart").getContext("2d");
+        tempChart = new Chart(tempCtx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Temperature (°C)",
+                data: [],
+                borderColor: "rgb(255, 99, 132)",
+                backgroundColor: "rgba(255, 99, 132, 0.1)",
+                borderWidth: 2,
+                tension: 0.2,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Temperature Over Time",
+                font: {
+                  size: 16,
+                },
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: "Temperature (°C)",
+                },
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: "Time",
+                },
+              },
+            },
+          },
+        });
+
+        // Humidity Chart
+        const humCtx = document
+          .getElementById("humidityChart")
+          .getContext("2d");
+        humidityChart = new Chart(humCtx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Humidity (%)",
+                data: [],
+                borderColor: "rgb(54, 162, 235)",
+                backgroundColor: "rgba(54, 162, 235, 0.1)",
+                borderWidth: 2,
+                tension: 0.2,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Humidity Over Time",
+                font: {
+                  size: 16,
+                },
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: "Humidity (%)",
+                },
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: "Time",
+                },
+              },
+            },
+          },
+        });
+
+        // Soil Moisture Chart
+        const soilCtx = document.getElementById("soilChart").getContext("2d");
+        soilChart = new Chart(soilCtx, {
+          type: "line",
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: "Soil Moisture (%)",
+                data: [],
+                borderColor: "rgb(75, 192, 192)",
+                backgroundColor: "rgba(75, 192, 192, 0.1)",
+                borderWidth: 2,
+                tension: 0.2,
+                fill: true,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              title: {
+                display: true,
+                text: "Soil Moisture Over Time",
+                font: {
+                  size: 16,
+                },
+              },
+              tooltip: {
+                mode: "index",
+                intersect: false,
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                title: {
+                  display: true,
+                  text: "Soil Moisture (%)",
+                },
+              },
+              x: {
+                title: {
+                  display: true,
+                  text: "Time",
+                },
+              },
+            },
+          },
+        });
+      }
+
+      // Fetch historical data and update charts
+      async function updateCharts(hours = 24) {
+        try {
+          const response = await fetch(`/api/history?hours=${hours}`);
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data || !data.timestamps || data.timestamps.length === 0) {
+            console.error("No historical data available");
+            return;
+          }
+
+          console.log("Received historical data:", data);
+
+          // Format timestamps for display (just time for recent data, date+time for older)
+          const formattedLabels = data.timestamps.map((timestamp) => {
+            const date = new Date(timestamp);
+            if (hours <= 24) {
+              return date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+            } else {
+              return (
+                date.toLocaleDateString([], {
+                  month: "short",
+                  day: "numeric",
+                }) +
+                " " +
+                date.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              );
+            }
+          });
+
+          // Update temperature chart
+          tempChart.data.labels = formattedLabels;
+          tempChart.data.datasets[0].data = data.temperature;
+          tempChart.options.plugins.title.text = `Temperature Over Time (${formatTimeRange(
+            hours
+          )})`;
+          tempChart.update();
+
+          // Update humidity chart
+          humidityChart.data.labels = formattedLabels;
+          humidityChart.data.datasets[0].data = data.humidity;
+          humidityChart.options.plugins.title.text = `Humidity Over Time (${formatTimeRange(
+            hours
+          )})`;
+          humidityChart.update();
+
+          // Update soil moisture chart
+          soilChart.data.labels = formattedLabels;
+          soilChart.data.datasets[0].data = data.soil_moisture;
+          soilChart.options.plugins.title.text = `Soil Moisture Over Time (${formatTimeRange(
+            hours
+          )})`;
+          soilChart.update();
+
+          console.log("Charts updated successfully");
+        } catch (error) {
+          console.error("Error fetching historical data:", error);
+        }
+      }
+
+      // Helper function to format time range for chart titles
+      function formatTimeRange(hours) {
+        if (hours <= 24) return `Last ${hours} Hours`;
+        if (hours <= 48) return "Last 2 Days";
+        if (hours <= 168) return "Last Week";
+        return `Last ${Math.round(hours / 24)} Days`;
+      }
+
+      // Initialize charts when DOM is ready
+      document.addEventListener("DOMContentLoaded", function () {
+        initializeCharts();
+        updateCharts(currentTimeRange);
+
+        // Time range selector functionality
+        const timeButtons = document.querySelectorAll(".time-btn");
+        timeButtons.forEach((button) => {
+          button.addEventListener("click", function () {
+            // Update active state
+            timeButtons.forEach((btn) => btn.classList.remove("active"));
+            this.classList.add("active");
+
+            // Get hours and update charts
+            const hours = parseInt(this.getAttribute("data-hours"));
+            currentTimeRange = hours;
+            updateCharts(hours);
+          });
+        });
+      });
+
+      // Update charts periodically (less frequently than sensor data)
+      setInterval(() => updateCharts(currentTimeRange), 60000); // Update charts every minute
     </script>
   </body>
 </html>
